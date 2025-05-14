@@ -42,7 +42,7 @@ STATIC_RESPONSES = {
     'saudacoes': START,
     'bom dia': '🌅 Bom dia! Registre um novo gasto ou consulte os existentes.',
     'boa tarde': '🌇 Boa tarde! Registre um novo gasto ou consulte os existentes.',
-    'boa noite': '🌆 Boa noite! Registre um novo gasto ou consulte os existentes.',
+    'boa noite': '🌃 Boa noite! Registre um novo gasto ou consulte os existentes.',
     'obrigado': '😊 De nada! Se precisar de mais algo, é só mandar mensagem.',
     'obrigada': '💖 Por nada! Estou aqui para ajudar.',
     'valeu': '👍 Valeu você! Manda ver.',
