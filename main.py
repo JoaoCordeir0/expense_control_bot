@@ -1,4 +1,4 @@
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
+from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, CallbackQueryHandler, filters
 from bot.config import BOT_TOKEN, ENV
 from bot.handlers import *
 from bot.db import init_db
@@ -21,8 +21,9 @@ def main():
             register_expense
         )
     )
-    app.add_handler(MessageHandler(filters.COMMAND, unknown_command))
+    app.add_handler(MessageHandler(filters.COMMAND, help))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, unknown_message))
+    app.add_handler(CallbackQueryHandler(handle_callback))
 
     print(f'Bot `{ENV}` iniciado.')
     app.run_polling()

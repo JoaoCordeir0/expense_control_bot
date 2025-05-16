@@ -1,8 +1,8 @@
 import locale
 import io
 import matplotlib.pyplot as plt
-from telegram import Update
-from telegram.ext import ContextTypes
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import ContextTypes, CallbackContext
 from datetime import datetime, timezone
 from sqlalchemy import func
 from .db import get_session
@@ -15,28 +15,48 @@ locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
 
 async def start(update: Update, context):
     user = register_user(update)
-
     message = START
-    
     try:
-        if not user.active:
+        if user.active:
+            message += START_ACTIVE
+            keyboard_options = get_keyboard_options('help')
+        else:
             raise Exception
     except:
         message += START_INACTIVE
+        keyboard_options = get_keyboard_options('support')
 
-    await update.message.reply_text(message)
+    await update.message.reply_text(message, reply_markup=keyboard_options)
 
-async def unknown_command(update, context):
-    await update.message.reply_text(UNKNOWN_COMMAND)
-
-async def unknown_message(update: Update, context):
-    await update.message.reply_text(create_response_with_user_message(update.message.text))
+async def support(update, context):
+    await update.message.reply_text(SUPPORT, parse_mode='Markdown')
 
 async def help(update, context):
     await update.message.reply_text(HELP, parse_mode='Markdown')
 
-async def support(update, context):
-    await update.message.reply_text(SUPPORT, parse_mode='Markdown')
+async def unknown_message(update: Update, context):
+    message, help = create_response_with_user_message(update.message.text)
+
+    if help:
+        await update.message.reply_text(message, reply_markup=get_keyboard_options('help'))
+    else:
+        await update.message.reply_text(message)
+
+async def handle_callback(update: Update, context):
+    query = update.callback_query
+    await query.answer()
+
+    chat_id = query.message.chat_id
+
+    match query.data:
+        case 'summary':
+            await context.bot.send_message(chat_id=chat_id, text=CALLBACK_SUMMARY)
+        case 'summary_chart':
+            await context.bot.send_message(chat_id=chat_id, text=CALLBACK_SUMMARY_CHART)
+        case 'add_expense':
+            await context.bot.send_message(chat_id=chat_id, text=CALLBACK_ADD_EXPENSE)
+        case 'help':
+            await context.bot.send_message(chat_id=chat_id, text=HELP, parse_mode='Markdown')
 
 async def active_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
@@ -73,7 +93,7 @@ async def register_expense(update: Update, context):
     try:
         parts = update.message.text.split(' ', 2)
         value = float(parts[1])
-        description = format_description(parts[2])
+        description = format_description(' '.join(parts[2:]))
 
         expense = Expense(value=value, description=description, user_id=user.id)
         session.add(expense)
@@ -96,7 +116,7 @@ async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
             session.close()
             return
         
-        current_month, month_name = get_month_str(context.args)
+        current_month, month_name = get_month_str(context)
 
         expenses = session.query(Expense).filter(
             Expense.user_id == user.id,
@@ -110,7 +130,7 @@ async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = f'📋 *Gastos detalhados do mês ({month_name}):*\n\n'
         total = 0
         for e in expenses:
-            response += f"• {e.description.capitalize()}: R${e.value:.2f} - {e.created_on.strftime('%d/%m')}\n"
+            response += f'• {e.description.capitalize()}: R${e.value:.2f} - {e.created_on.strftime('%d/%m')}\n'
             total += e.value
         response += f'\n📊 *Total:* R${total:.2f}'
 
@@ -124,7 +144,7 @@ async def summary_chart(update: Update, context: ContextTypes.DEFAULT_TYPE):
         telegram_id = update.effective_user.id
 
         month_and_year = datetime.now().strftime('%B/%Y')
-        current_month, month_name = get_month_str(context.args)
+        current_month, month_name = get_month_str(context)
 
         user = session.query(User).filter_by(telegram_id=telegram_id).first()
         if not user:
@@ -142,7 +162,7 @@ async def summary_chart(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(EXPENSE_NONE.format(month=month_name))
             return
 
-        labels = [f"{e.description.capitalize()}-{e.created_on.strftime('%d/%m')}" for e in expenses]
+        labels = [f'{e.description.capitalize()}-{e.created_on.strftime('%d/%m')}' for e in expenses]
         values = [e.value for e in expenses]
     
         chart_option = 'barra' if len(context.args) == 0 else context.args[0]
@@ -153,12 +173,12 @@ async def summary_chart(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
                 ax.plot(labels, values, color='#7e22ce', marker='o', linewidth=2)
 
-                ax.set_title(f"Gastos de {month_and_year}")
-                ax.set_ylabel("Valor (R$)")
+                ax.set_title(f'Gastos de {month_and_year}')
+                ax.set_ylabel('Valor (R$)')
                 plt.xticks(rotation=45, ha='right')
 
                 for i, value in enumerate(values):
-                    ax.text(i, value + max(values)*0.02, f"R$ {value:.2f}", ha='center', va='bottom', fontsize=9)
+                    ax.text(i, value + max(values)*0.02, f'R$ {value:.2f}', ha='center', va='bottom', fontsize=9)
 
                 plt.tight_layout()
             
@@ -172,7 +192,7 @@ async def summary_chart(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     startangle=90,
                 )
 
-                ax.set_title(f"Gastos de {month_and_year}")
+                ax.set_title(f'Gastos de {month_and_year}')
                 ax.axis('equal')
 
                 plt.tight_layout()
@@ -181,19 +201,19 @@ async def summary_chart(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 fig, ax = plt.subplots(figsize=(8, 4))
 
                 ax.barh(labels, values, color='#7e22ce')
-                ax.set_title(f"Gastos de {month_and_year}")
-                ax.set_xlabel("Valor (R$)")
+                ax.set_title(f'Gastos de {month_and_year}')
+                ax.set_xlabel('Valor (R$)')
 
                 for i, v in enumerate(values):
-                    ax.text(v + max(values)*0.01, i, f"R$ {v:.2f}", va='center')
+                    ax.text(v + max(values)*0.01, i, f'R$ {v:.2f}', va='center')
 
                 plt.tight_layout()
            
             case _:
                 fig, ax = plt.subplots(figsize=(8, 4))
                 ax.bar(labels, values, color='#7e22ce')
-                ax.set_title(f"Gastos de {month_and_year}")
-                ax.set_ylabel("Valor (R$)")
+                ax.set_title(f'Gastos de {month_and_year}')
+                ax.set_ylabel('Valor (R$)')
                 plt.xticks(rotation=45, ha='right')
                 plt.tight_layout()
 

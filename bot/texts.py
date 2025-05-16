@@ -1,15 +1,16 @@
-START = '👋 Olá! Bem-vindo ao BOT de Controle de Gastos.\n\nPara registrar um gasto, envie: `Gastei <valor> <descricao>`\n\n'
-START_INACTIVE = 'Seu acesso está *inativo* no momento. Entre em contato com [suporte](https://t.me/Cordeirovsk) para liberar.'
+START = '👋 Olá! Bem-vindo ao BOT de Controle de Gastos\n\n'
+START_INACTIVE = 'Seu acesso está Inativo 🚫\n\nEntre em contato com o suporte para liberar. 👊'
+START_ACTIVE = 'Seu acesso está Ativo ✅\n\nEnvie `Gastei 50.40 no mercado` para registra uma nova despesa. 💲' 
 UNKNOWN_COMMAND = '❓ Comando não reconhecido. Use /ajuda.'
 UNKNOWN_MESSAGE = '🤖 Não entendi. Tente /ajuda.'
 SUPPORT = '🤖 Entre em contato com o [suporte](https://t.me/Cordeirovsk) para esclarecer sua dúvida'
 HELP = """📌 Comandos disponíveis:\n
-/start - Inicia a conversa
-/resumo - Visualiza os gastos do mês
-/grafico - Gera um gráfico com os gastos
-/suporte - É disponibilizado o contato para suporte\n
-Para registar um novo gasto envie: Gastei <valor> <descricao>\n
-
+/start - Inicia uma conversa
+/resumo - Mostro seus gastos do mês
+/grafico - Gero um gráfico com os seus gastos
+/suporte - Mando o contato do suporte\n
+Para registar um novo gasto, basta me enviar:\n
+` Gastei <valor> <descricao> `\n
 ↘️ Exemplos de uso:
 • /resumo
 • /resumo janeiro
@@ -53,3 +54,7 @@ STATIC_RESPONSES = {
     'tudo bem': '🤖 Eu sou um bot, então estou sempre 100%!',
     'quem e voce': '🤖 Sou seu assistente virtual! Meu objetivo é te ajudar a organizar seus gastos.',
 }
+
+CALLBACK_ADD_EXPENSE = '💡 Para registar um novo gasto, basta me enviar:\n\n`Gastei <valor> <descricao>`'
+CALLBACK_SUMMARY = '💡 Para visualizar seus gastos, basta me enviar:\n\n/resumo\n\nVocê pode enviar `/resumo junho` para mudar o mês de consulta.'
+CALLBACK_SUMMARY_CHART = '💡 Para visualizar seus gastos em gráfico, basta me enviar:\n\n/grafico\n\nVocê pode enviar `/grafico pizza junho` para mudar o estilo de gráfico e mês de consulta.'
