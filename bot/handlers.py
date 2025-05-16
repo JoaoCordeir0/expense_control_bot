@@ -91,7 +91,7 @@ async def register_expense(update: Update, context):
         return
 
     try:
-        parts = update.message.text.split(' ', 2)
+        parts = update.message.text.split(' ')
         value = float(parts[1])
         description = format_description(' '.join(parts[2:]))
 
@@ -130,7 +130,7 @@ async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response = f'📋 *Gastos detalhados do mês ({month_name}):*\n\n'
         total = 0
         for e in expenses:
-            response += f'• {e.description.capitalize()}: R${e.value:.2f} - {e.created_on.strftime('%d/%m')}\n'
+            response += f"• {e.description.capitalize()}: R${e.value:.2f} - {e.created_on.strftime('%d/%m')}\n"
             total += e.value
         response += f'\n📊 *Total:* R${total:.2f}'
 
@@ -162,7 +162,7 @@ async def summary_chart(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(EXPENSE_NONE.format(month=month_name))
             return
 
-        labels = [f'{e.description.capitalize()}-{e.created_on.strftime('%d/%m')}' for e in expenses]
+        labels = [f"{e.description.capitalize()}-{e.created_on.strftime('%d/%m')}" for e in expenses]
         values = [e.value for e in expenses]
     
         chart_option = 'barra' if len(context.args) == 0 else context.args[0]
