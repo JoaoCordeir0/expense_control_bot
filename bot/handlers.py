@@ -1,15 +1,16 @@
 import locale
 import io
 import matplotlib.pyplot as plt
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ContextTypes, CallbackContext
-from datetime import datetime, timezone
+from telegram import Update
+from telegram.ext import ContextTypes
+from datetime import datetime
 from sqlalchemy import func
 from .db import get_session
 from .models import Expense, User
 from .config import ADMIN_ID
 from .hooks import *
 from .texts import *
+from dateutil.relativedelta import relativedelta
 
 locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
 
@@ -93,12 +94,22 @@ async def register_expense(update: Update, context):
     try:
         parts = update.message.text.split(' ')
         value = float(parts[1])
-        description = format_description(' '.join(parts[2:]))
+        text = format_text(' '.join(parts[2:]))
 
-        expense = Expense(value=value, description=description, user_id=user.id)
-        session.add(expense)
-        session.commit()
-        await update.message.reply_text(EXPENSE_SUCCESS.format(name=user.name, value=value, description=description))
+        description, installments, installments_bool = is_installments(text)
+        
+        if installments_bool:
+            for i in range(0, installments):
+                created_on = datetime.now() + relativedelta(months=i)
+                expense = Expense(value=value/installments, description=description, user_id=user.id, created_on=created_on)
+                session.add(expense)
+                session.commit()
+            await update.message.reply_text(EXPENSE_SUCCESS.format(name=user.name, value=value, description=description))
+        else:
+            expense = Expense(value=value, description=description, user_id=user.id)
+            session.add(expense)
+            session.commit()
+            await update.message.reply_text(EXPENSE_SUCCESS.format(name=user.name, value=value, description=description))
     except:
         await update.message.reply_text(EXPENSE_INSTRUCTIONS)
     finally:
@@ -135,6 +146,8 @@ async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response += f'\n📊 *Total:* R${total:.2f}'
 
         await update.message.reply_text(response, parse_mode='Markdown')
+    except Exception as e:
+        print(e)
     finally:
         session.close()
 

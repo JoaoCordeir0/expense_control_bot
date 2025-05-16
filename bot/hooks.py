@@ -30,11 +30,11 @@ def register_user(update) -> User:
 
     return user
 
-def format_description(description) -> str:
-    words = ['na ', 'no ', 'com ', 'em ']
+def format_text(description) -> str:
+    words = ['com a ', 'com o ', 'na ', 'no ', 'com ', 'em ']
     for word in words:
         description = description.replace(word, '')
-    return description.capitalize()
+    return description.strip().capitalize()
 
 def get_month_str(context) -> str:
     months = {
@@ -112,3 +112,9 @@ def get_keyboard_options(type):
             
     return InlineKeyboardMarkup(keyboard)
     
+def is_installments(text):
+    for value in ['2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x', '10x', '11x', '12x']:
+        if value in text:
+            new_text = text.replace(value, '').strip() + f' em {value}'
+            return new_text, int(value.replace('x', '')), True
+    return text.strip(), 0, False
