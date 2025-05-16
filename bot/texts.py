@@ -1,6 +1,7 @@
 START = '👋 Olá! Bem-vindo ao BOT de Controle de Gastos\n\n'
 START_INACTIVE = 'Seu acesso está Inativo 🚫\n\nEntre em contato com o suporte para liberar. 👊'
-START_ACTIVE = 'Seu acesso está Ativo ✅\n\nEnvie `Gastei 50.40 no mercado` para registra uma nova despesa. 💲' 
+START_ACTIVE = 'Seu acesso está Ativo ✅\n\nEnvie `Gastei 50.40 no mercado` para registra uma nova despesa. 💲'
+ERROR_MESSAGE = '🤖 Ocorreu um erro inesperado. Por favor, tente novamente mais tarde.'
 UNKNOWN_COMMAND = '❓ Comando não reconhecido. Use /ajuda.'
 UNKNOWN_MESSAGE = '🤖 Não entendi. Tente /ajuda.'
 SUPPORT = '🤖 Entre em contato com o [suporte](https://t.me/Cordeirovsk) para esclarecer sua dúvida'

@@ -138,6 +138,42 @@ async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     finally:
         session.close()
 
+async def spy_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    session = get_session()
+    try:
+        if str(update.effective_user.id) != ADMIN_ID:
+            await update.message.reply_text(NOT_ACCESS)
+            return
+
+        user = session.query(User).filter_by(name=context.args[0]).first()
+
+        if not user:
+            await update.message.reply_text(USER_NOTREGISTRED)
+            session.close()
+            return
+        
+        current_month, month_name = get_month_str(context)
+
+        expenses = session.query(Expense).filter(
+            Expense.user_id == user.id,
+            func.date_format(Expense.created_on, '%Y-%m') == current_month
+        ).all()
+
+        if not expenses:
+            await update.message.reply_text(EXPENSE_NONE.format(month=month_name))
+            return
+
+        response = f'📋 *Gastos detalhados do(a) {user.name} no mês ({month_name}):*\n\n'
+        total = 0
+        for e in expenses:
+            response += f'• {e.description.capitalize()}: R${e.value:.2f} - {e.created_on.strftime('%d/%m')}\n'
+            total += e.value
+        response += f'\n📊 *Total:* R${total:.2f}'
+
+        await update.message.reply_text(response, parse_mode='Markdown')
+    finally:
+        session.close()
+        
 async def summary_chart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     session = get_session()
     try:
