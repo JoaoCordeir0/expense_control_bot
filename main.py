@@ -10,21 +10,23 @@ def main():
 
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    app.add_handler(CommandHandler('start', start))
-    app.add_handler(CommandHandler('ajuda', help))
-    app.add_handler(CommandHandler('suporte', support))
-    app.add_handler(CommandHandler('ativar', active_user))
-    app.add_handler(CommandHandler('resumo', summary))
-    app.add_handler(CommandHandler('grafico', summary_chart))
-    app.add_handler(CommandHandler('espiar', spy_user))
+    app.add_handler(MessageHandler(filters.TEXT & filters.UpdateType.EDITED_MESSAGE, handle_edited_message))
+    app.add_handler(CommandHandler('start', handle_start))
+    app.add_handler(CommandHandler('ajuda', handle_help))
+    app.add_handler(CommandHandler('suporte', handle_support))
+    app.add_handler(CommandHandler('ativar', handle_active_user))
+    app.add_handler(CommandHandler('resumo', handle_summary))
+    app.add_handler(CommandHandler('calcular', handle_calculate_salary))
+    app.add_handler(CommandHandler('grafico', handle_summary_chart))
+    app.add_handler(CommandHandler('espiar', handle_spy_user))
     app.add_handler(
         MessageHandler(
             filters.TEXT & filters.Regex(re.compile(r'^gastei\s+\d+', re.IGNORECASE)),
-            register_expense
+            handle_register_expense
         )
     )
-    app.add_handler(MessageHandler(filters.COMMAND, help))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, unknown_message))
+    app.add_handler(MessageHandler(filters.COMMAND, handle_help))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_unknown_message))
     app.add_handler(CallbackQueryHandler(handle_callback))
     
     app.add_error_handler(lambda update, context: context.bot.send_message(

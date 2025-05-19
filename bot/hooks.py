@@ -6,13 +6,13 @@ from datetime import datetime
 from unidecode import unidecode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-def get_user(update) -> tuple:
+def hook_get_user(update) -> tuple:
     session = get_session()
     telegram_id = update.effective_user.id
     user = session.query(User).filter_by(telegram_id=telegram_id).first()
     return user, session
 
-def register_user(update) -> User:
+def hook_register_user(update) -> User:
     session = get_session()
     telegram_id = update.effective_user.id
     user = session.query(User).filter_by(telegram_id=telegram_id).first()
@@ -30,13 +30,13 @@ def register_user(update) -> User:
 
     return user
 
-def format_text(description) -> str:
+def hook_format_text(description) -> str:
     words = ['com a ', 'com o ', 'na ', 'no ', 'com ', 'em ']
     for word in words:
         description = description.replace(word, '')
     return description.strip().capitalize()
 
-def get_month_str(context) -> str:
+def hook_get_month_str(context) -> str:
     months = {
         'janeiro': 1,
         'fevereiro': 2,
@@ -78,7 +78,7 @@ def get_month_str(context) -> str:
         now = datetime.now()
         return now.strftime('%Y-%m'), now.strftime('%B').capitalize()
 
-def create_response_with_user_message(original_message) -> str:
+def hook_create_response_with_user_message(original_message) -> str:
     standardized_message = re.sub(r'[^\w\s]', '', unidecode(original_message).strip().lower())
     try:
         for key in STATIC_RESPONSES:
@@ -94,7 +94,7 @@ def create_response_with_user_message(original_message) -> str:
         else:
             return STATIC_RESPONSES['boa noite'], True
         
-def get_keyboard_options(type):
+def hook_get_keyboard_options(type):
     keyboard = []
     match type:
         case 'help':
@@ -102,6 +102,7 @@ def get_keyboard_options(type):
                 [InlineKeyboardButton('🗒️ Ver resumos', callback_data='summary')],
                 [InlineKeyboardButton('📊 Ver resumos em gráfico', callback_data='summary_chart')],
                 [InlineKeyboardButton('📝 Adicionar gasto', callback_data='add_expense')],
+                [InlineKeyboardButton('💰 Calcular salário', callback_data='calculate_salary')],
                 [InlineKeyboardButton('🧠 Solicitar ajuda', callback_data='help')],
             ]
 
@@ -112,7 +113,7 @@ def get_keyboard_options(type):
             
     return InlineKeyboardMarkup(keyboard)
     
-def is_installments(text):
+def hook_is_installments(text):
     for value in ['2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x', '10x', '11x', '12x']:
         if value in text:
             new_text = text.replace(value, '').strip() + f' em {value}'

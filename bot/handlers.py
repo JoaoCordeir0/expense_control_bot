@@ -14,34 +14,37 @@ from dateutil.relativedelta import relativedelta
 
 locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
 
-async def start(update: Update, context):
-    user = register_user(update)
+async def handle_start(update: Update, context):
+    user = hook_register_user(update)
     message = START
     try:
         if user.active:
             message += START_ACTIVE
-            keyboard_options = get_keyboard_options('help')
+            keyboard_options = hook_get_keyboard_options('help')
         else:
             raise Exception
     except:
         message += START_INACTIVE
-        keyboard_options = get_keyboard_options('support')
+        keyboard_options = hook_get_keyboard_options('support')
 
     await update.message.reply_text(message, reply_markup=keyboard_options)
 
-async def support(update, context):
+async def handle_support(update, context):
     await update.message.reply_text(SUPPORT, parse_mode='Markdown')
 
-async def help(update, context):
+async def handle_help(update, context):
     await update.message.reply_text(HELP, parse_mode='Markdown')
 
-async def unknown_message(update: Update, context):
-    message, help = create_response_with_user_message(update.message.text)
+async def handle_unknown_message(update: Update, context):
+    message, help = hook_create_response_with_user_message(update.message.text)
 
     if help:
-        await update.message.reply_text(message, reply_markup=get_keyboard_options('help'))
+        await update.message.reply_text(message, reply_markup=hook_get_keyboard_options('help'))
     else:
         await update.message.reply_text(message)
+
+async def handle_edited_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.effective_message.reply_text(EDITED_MESSAGE)
 
 async def handle_callback(update: Update, context):
     query = update.callback_query
@@ -56,10 +59,12 @@ async def handle_callback(update: Update, context):
             await context.bot.send_message(chat_id=chat_id, text=CALLBACK_SUMMARY_CHART)
         case 'add_expense':
             await context.bot.send_message(chat_id=chat_id, text=CALLBACK_ADD_EXPENSE)
+        case 'calculate_salary':
+            await context.bot.send_message(chat_id=chat_id, text=CALCULATE_INSTRUCTIONS)
         case 'help':
             await context.bot.send_message(chat_id=chat_id, text=HELP, parse_mode='Markdown')
 
-async def active_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_active_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if str(update.effective_user.id) != ADMIN_ID:
         await update.message.reply_text(NOT_ACCESS)
         return
@@ -80,8 +85,8 @@ async def active_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(USER_NOTFOUND)
     session.close()
 
-async def register_expense(update: Update, context):
-    user, session = get_user(update)
+async def handle_register_expense(update: Update, context):
+    user, session = hook_get_user(update)
     if not user:
         session.close()
         await update.message.reply_text(USER_NOTREGISTRED)
@@ -94,9 +99,9 @@ async def register_expense(update: Update, context):
     try:
         parts = update.message.text.split(' ')
         value = float(parts[1])
-        text = format_text(' '.join(parts[2:]))
+        text = hook_format_text(' '.join(parts[2:]))
 
-        description, installments, installments_bool = is_installments(text)
+        description, installments, installments_bool = hook_is_installments(text)
         
         if installments_bool:
             for i in range(0, installments):
@@ -115,7 +120,7 @@ async def register_expense(update: Update, context):
     finally:
         session.close()
 
-async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
     session = get_session()
     try:
         telegram_id = update.effective_user.id
@@ -127,7 +132,7 @@ async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
             session.close()
             return
         
-        current_month, month_name = get_month_str(context)
+        current_month, month_name = hook_get_month_str(context)
 
         expenses = session.query(Expense).filter(
             Expense.user_id == user.id,
@@ -146,12 +151,48 @@ async def summary(update: Update, context: ContextTypes.DEFAULT_TYPE):
         response += f'\n📊 *Total:* R${total:.2f}'
 
         await update.message.reply_text(response, parse_mode='Markdown')
-    except Exception as e:
-        print(e)
     finally:
         session.close()
 
-async def spy_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_calculate_salary(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    session = get_session()
+    try:
+        telegram_id = update.effective_user.id
+
+        user = session.query(User).filter_by(telegram_id=telegram_id).first()
+
+        if not user:
+            await update.message.reply_text(USER_NOTREGISTRED)
+            session.close()
+            return
+
+        current_month, month_name = hook_get_month_str(context)
+        
+        if len(context.args) == 0 or not context.args[0].isdigit():
+            await update.message.reply_text(CALCULATE_INVALID)
+            return
+        
+        user_salary = float(context.args[0])
+
+        expenses = session.query(Expense).filter(
+            Expense.user_id == user.id,
+            func.date_format(Expense.created_on, '%Y-%m') == current_month
+        ).all()
+
+        if not expenses:
+            await update.message.reply_text(EXPENSE_NONE.format(month=month_name))
+            return
+
+        total = sum(e.value for e in expenses)
+        remaining = user_salary - total
+
+        message = REMAINING_SALARY_POSITIVE if remaining >= 0 else REMAINING_SALARY_NEGATIVE
+        
+        await update.message.reply_text(message.format(salary=user_salary, total=total, remaining=remaining, month=month_name))
+    finally:
+        session.close()
+
+async def handle_spy_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     session = get_session()
     try:
         if str(update.effective_user.id) != ADMIN_ID:
@@ -165,7 +206,7 @@ async def spy_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
             session.close()
             return
         
-        current_month, month_name = get_month_str(context)
+        current_month, month_name = hook_get_month_str(context)
 
         expenses = session.query(Expense).filter(
             Expense.user_id == user.id,
@@ -187,13 +228,13 @@ async def spy_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     finally:
         session.close()
 
-async def summary_chart(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_summary_chart(update: Update, context: ContextTypes.DEFAULT_TYPE):
     session = get_session()
     try:
         telegram_id = update.effective_user.id
 
         month_and_year = datetime.now().strftime('%B/%Y')
-        current_month, month_name = get_month_str(context)
+        current_month, month_name = hook_get_month_str(context)
 
         user = session.query(User).filter_by(telegram_id=telegram_id).first()
         if not user:
