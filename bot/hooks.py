@@ -114,7 +114,7 @@ def hook_get_keyboard_options(type):
     return InlineKeyboardMarkup(keyboard)
     
 def hook_is_installments(text):
-    for value in ['2x', '3x', '4x', '5x', '6x', '7x', '8x', '9x', '10x', '11x', '12x']:
+    for value in ['12x', '11x', '10x', '9x', '8x', '7x', '6x', '5x', '4x', '3x', '2x']:
         if value in text:
             new_text = text.replace(value, '').strip() + f' em {value}'
             return new_text, int(value.replace('x', '')), True
