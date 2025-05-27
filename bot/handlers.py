@@ -11,6 +11,7 @@ from .config import ADMIN_ID
 from .hooks import *
 from .texts import *
 from dateutil.relativedelta import relativedelta
+from api.gemini_api import GeminiApi
 
 locale.setlocale(locale.LC_TIME, 'pt_BR.UTF-8')
 
@@ -36,12 +37,9 @@ async def handle_help(update, context):
     await update.message.reply_text(HELP, parse_mode='Markdown')
 
 async def handle_unknown_message(update: Update, context):
-    message, help = hook_create_response_with_user_message(update.message.text)
-
-    if help:
-        await update.message.reply_text(message, reply_markup=hook_get_keyboard_options('help'))
-    else:
-        await update.message.reply_text(message)
+    gemini = GeminiApi()
+    message = gemini.create_response_with_user_message(update.message.text)
+    await update.message.reply_text(message)
 
 async def handle_edited_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.effective_message.reply_text(EDITED_MESSAGE)
@@ -97,11 +95,13 @@ async def handle_register_expense(update: Update, context):
         return
 
     try:
-        parts = update.message.text.split(' ')
-        value = float(parts[1])
-        text = hook_format_text(' '.join(parts[2:]))
+        gemini = GeminiApi()
+        gemini_response = gemini.extract_info_from_user_text(update.message.text)
 
-        description, installments, installments_bool = hook_is_installments(text)
+        value = float(gemini_response.get('total_value'))
+        description = str(gemini_response.get('description'))
+        installments_bool = bool(gemini_response.get('is_installments', False))
+        installments = int(gemini_response.get('quantity_installments', 0))
         
         if installments_bool:
             for i in range(0, installments):
@@ -109,7 +109,7 @@ async def handle_register_expense(update: Update, context):
                 expense = Expense(value=value/installments, description=description, user_id=user.id, created_on=created_on)
                 session.add(expense)
                 session.commit()
-            await update.message.reply_text(EXPENSE_SUCCESS.format(name=user.name, value=value, description=description))
+            await update.message.reply_text(EXPENSE_SUCCESS.format(name=user.name, value=value, description=f'{description} em ({installments}x)'))
         else:
             expense = Expense(value=value, description=description, user_id=user.id)
             session.add(expense)
@@ -287,7 +287,15 @@ async def handle_summary_chart(update: Update, context: ContextTypes.DEFAULT_TYP
 
                 plt.tight_layout()
 
-            case 'barra-horizontal':
+            case 'barra-vertical':
+                fig, ax = plt.subplots(figsize=(8, 4))
+                ax.bar(labels, values, color='#7e22ce')
+                ax.set_title(f'Gastos de {month_and_year}')
+                ax.set_ylabel('Valor (R$)')
+                plt.xticks(rotation=45, ha='right')
+                plt.tight_layout()
+
+            case _:
                 fig, ax = plt.subplots(figsize=(8, 4))
 
                 ax.barh(labels, values, color='#7e22ce')
@@ -297,14 +305,6 @@ async def handle_summary_chart(update: Update, context: ContextTypes.DEFAULT_TYP
                 for i, v in enumerate(values):
                     ax.text(v + max(values)*0.01, i, f'R$ {v:.2f}', va='center')
 
-                plt.tight_layout()
-           
-            case _:
-                fig, ax = plt.subplots(figsize=(8, 4))
-                ax.bar(labels, values, color='#7e22ce')
-                ax.set_title(f'Gastos de {month_and_year}')
-                ax.set_ylabel('Valor (R$)')
-                plt.xticks(rotation=45, ha='right')
                 plt.tight_layout()
 
         buf = io.BytesIO()

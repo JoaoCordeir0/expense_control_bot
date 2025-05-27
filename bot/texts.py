@@ -39,26 +39,6 @@ EXPENSE_NONE = "✅ Nenhum gasto registrado no mês de {month}."
 
 MONTH_SUMMARY = "📊 Gasto do mês ({month}): R${total:.2f}"
 
-STATIC_RESPONSES = {
-    'oi': START,
-    'opa': START,
-    'eae': START,
-    'ola': START,
-    'saudacoes': START,
-    'bom dia': '🌅 Bom dia! Registre um novo gasto ou consulte os existentes.',
-    'boa tarde': '🌇 Boa tarde! Registre um novo gasto ou consulte os existentes.',
-    'boa noite': '🌃 Boa noite! Registre um novo gasto ou consulte os existentes.',
-    'obrigado': '😊 De nada! Se precisar de mais algo, é só mandar mensagem.',
-    'obrigada': '💖 Por nada! Estou aqui para ajudar.',
-    'valeu': '👍 Valeu você! Manda ver.',
-    'tchau': '👋 Até logo! Volte quando quiser.',
-    'flw': '✌️ Até logo! Volte quando quiser.',
-    'ate mais': '✨ Até mais! Qualquer dúvida, estou aqui.',
-    'como vai': '🤖 Eu sou um bot, então estou sempre 100%!',
-    'tudo bem': '🤖 Eu sou um bot, então estou sempre 100%!',
-    'quem e voce': '🤖 Sou seu assistente virtual! Meu objetivo é te ajudar a organizar seus gastos.',
-}
-
 CALLBACK_ADD_EXPENSE = '💡 Para registar um novo gasto, basta me enviar:\n\n`Gastei <valor> <descricao>`'
 CALLBACK_SUMMARY = '💡 Para visualizar seus gastos, basta me enviar:\n\n/resumo\n\nVocê pode enviar `/resumo junho` para mudar o mês de consulta.'
 CALLBACK_SUMMARY_CHART = '💡 Para visualizar seus gastos em gráfico, basta me enviar:\n\n/grafico\n\nVocê pode enviar `/grafico pizza junho` para mudar o estilo de gráfico e mês de consulta.'

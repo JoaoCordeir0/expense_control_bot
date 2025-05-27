@@ -1,7 +1,6 @@
 import re
 from .db import get_session
 from .models import Expense, User
-from .texts import STATIC_RESPONSES
 from datetime import datetime
 from unidecode import unidecode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
@@ -29,12 +28,6 @@ def hook_register_user(update) -> User:
     session.close()
 
     return user
-
-def hook_format_text(description) -> str:
-    words = ['com a ', 'com o ', 'na ', 'no ', 'com ', 'em ']
-    for word in words:
-        description = description.replace(word, '')
-    return description.strip().capitalize()
 
 def hook_get_month_str(context) -> str:
     months = {
@@ -77,22 +70,6 @@ def hook_get_month_str(context) -> str:
         
         now = datetime.now()
         return now.strftime('%Y-%m'), now.strftime('%B').capitalize()
-
-def hook_create_response_with_user_message(original_message) -> str:
-    standardized_message = re.sub(r'[^\w\s]', '', unidecode(original_message).strip().lower())
-    try:
-        for key in STATIC_RESPONSES:
-            if standardized_message in key:
-                return STATIC_RESPONSES[key], False
-        raise KeyError
-    except KeyError:
-        now_hour = datetime.now().hour
-        if 5 <= now_hour < 12:
-            return STATIC_RESPONSES['bom dia'], True
-        elif 12 <= now_hour < 18:
-            return STATIC_RESPONSES['boa tarde'], True
-        else:
-            return STATIC_RESPONSES['boa noite'], True
         
 def hook_get_keyboard_options(type):
     keyboard = []
@@ -112,10 +89,3 @@ def hook_get_keyboard_options(type):
             ]
             
     return InlineKeyboardMarkup(keyboard)
-    
-def hook_is_installments(text):
-    for value in ['12x', '11x', '10x', '9x', '8x', '7x', '6x', '5x', '4x', '3x', '2x']:
-        if value in text:
-            new_text = text.replace(value, '').strip() + f' em {value}'
-            return new_text, int(value.replace('x', '')), True
-    return text.strip(), 0, False

@@ -5,3 +5,4 @@ matplotlib==3.10.3
 PyMySQL==1.1.1
 cryptography==44.0.3
 Unidecode==1.4.0
+google-genai==1.16.1
