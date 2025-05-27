@@ -95,7 +95,7 @@ class GeminiApi:
             model=self.model,
             config=types.GenerateContentConfig(
                 system_instruction=prompt,
-                max_output_tokens=500
+                max_output_tokens=200
             ),
             contents=user_text
         )
